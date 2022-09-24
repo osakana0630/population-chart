@@ -1,4 +1,4 @@
-import { FC, useEffect, useState, ChangeEvent, useMemo } from 'react'
+import { FC, useEffect, useState, ChangeEvent } from 'react'
 import { Chart } from 'react-google-charts'
 import {
   Grid,
@@ -45,13 +45,7 @@ const ChartsHome: FC<Props> = ({}) => {
   useEffect(() => {
     if (!selectedPrefCode.length) return
     selectedPrefCode.forEach((prefCode) => {
-      if (
-        populationData &&
-        Object.keys(populationData).includes(String(prefCode))
-      ) {
-        return
-      }
-
+      if (Object.keys(populationData || {}).includes(String(prefCode))) return
       axios
         .get(baseUrl + `population/composition/perYear?&prefCode=${prefCode}`, {
           headers: {
@@ -89,38 +83,37 @@ const ChartsHome: FC<Props> = ({}) => {
   }
 
   const createChartData = (): any => {
-    if (!selectedPrefCode.length) {
+    if (!Object.keys(populationData || {}).length) {
       return [
         ['年', 'dummy'],
-        ['2022', 0],
+        [null, 0],
       ]
     }
 
     const firstRow = ['年']
     prefectures.forEach((pref) => {
-      if (selectedPrefCode.includes(pref.prefCode)) {
+      if (Object.keys(populationData || {}).includes(String(pref.prefCode))) {
         firstRow.push(pref.prefName)
       }
     })
 
-    const dataRow: any = []
+    const dataRows: any = []
     Object.values(populationData || {}).forEach((population, index) => {
       population.forEach((p, i) => {
         if (index === 0) {
-          dataRow.push([String(p.year), p.value])
+          dataRows.push([String(p.year), p.value])
         } else {
-          dataRow[i].push(p.value)
+          dataRows[i].push(p.value)
         }
       })
     })
 
-    dataRow.unshift(firstRow)
+    dataRows.unshift(firstRow)
 
-    return dataRow
+    return dataRows
   }
 
   const chartData = createChartData()
-  console.log(chartData)
 
   const options = {
     title: '年別人口数',
